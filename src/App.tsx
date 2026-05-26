@@ -10,9 +10,11 @@ import {
   Search,
   Sparkles,
   Trash2,
+  TriangleAlert,
 } from "lucide-react";
 
 type Mood = "good" | "calm" | "tired" | "hard";
+type SaveState = "saved" | "saving" | "error";
 
 type DiaryEntry = {
   id: string;
@@ -67,11 +69,22 @@ function App() {
   });
   const [activeId, setActiveId] = useState(entries[0]?.id ?? "");
   const [query, setQuery] = useState("");
+  const [saveState, setSaveState] = useState<SaveState>("saved");
   const [saveMessage, setSaveMessage] = useState("保存済み");
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-    setSaveMessage("保存しました");
+    setSaveState("saving");
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      setSaveState("saved");
+      setSaveMessage("保存しました");
+    } catch {
+      setSaveState("error");
+      setSaveMessage("保存できませんでした");
+      return;
+    }
+
     const timer = window.setTimeout(() => setSaveMessage("自動保存中"), 1400);
     return () => window.clearTimeout(timer);
   }, [entries]);
@@ -144,16 +157,21 @@ function App() {
             <p className="eyebrow">Daily Diary</p>
             <h1>きょうを残す</h1>
           </div>
-          <button className="icon-button primary" type="button" onClick={addEntry} aria-label="新しい日記">
-            <Plus size={22} />
+          <button className="action-pill primary" type="button" onClick={addEntry}>
+            <Plus size={19} />
+            新しい日記
           </button>
         </header>
 
-        <div className="save-status" aria-live="polite">
-          <CheckCircle2 size={20} />
+        <div className={`save-status ${saveState}`} aria-live="polite">
+          {saveState === "error" ? <TriangleAlert size={20} /> : <CheckCircle2 size={20} />}
           <div>
             <strong>{saveMessage}</strong>
-            <span>入力するとすぐ端末内に保存されます</span>
+            <span>
+              {saveState === "error"
+                ? "ブラウザの保存設定を確認してください"
+                : "入力内容はこの端末のブラウザに保存されます"}
+            </span>
           </div>
         </div>
 
@@ -207,12 +225,12 @@ function App() {
                 />
               </label>
               <button
-                className={`icon-button ${activeEntry.favorite ? "liked" : ""}`}
+                className={`favorite-button ${activeEntry.favorite ? "liked" : ""}`}
                 type="button"
                 onClick={() => updateEntry({ favorite: !activeEntry.favorite })}
-                aria-label="お気に入り"
               >
-                <Heart size={21} />
+                <Heart size={19} />
+                {activeEntry.favorite ? "お気に入り中" : "お気に入り"}
               </button>
             </div>
 

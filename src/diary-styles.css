@@ -83,25 +83,35 @@ h1 {
   line-height: 1.05;
 }
 
-.icon-button {
-  width: 46px;
-  height: 46px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 46px;
+.action-pill,
+.favorite-button {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   border: 0;
-  border-radius: 50%;
+  border-radius: 999px;
   color: #3a332b;
   background: #eee6d7;
+  font-size: 0.9rem;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
-.icon-button.primary {
+.action-pill.primary {
+  padding: 0 15px;
   color: #fffdf8;
   background: #3f6f68;
   box-shadow: 0 10px 24px rgba(63, 111, 104, 0.28);
 }
 
-.icon-button.liked {
+.favorite-button {
+  flex: 0 0 auto;
+  padding: 0 13px;
+}
+
+.favorite-button.liked {
   color: #fffdf8;
   background: #be514a;
 }
@@ -122,6 +132,12 @@ h1 {
   border-radius: 8px;
   color: #173d38;
   background: #dcebe6;
+}
+
+.save-status.error {
+  border-color: rgba(190, 81, 74, 0.34);
+  color: #6a3834;
+  background: #f3ddd8;
 }
 
 .save-status svg {
@@ -392,5 +408,23 @@ textarea {
 
   .mood-picker {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .top-bar {
+    align-items: flex-start;
+  }
+
+  .action-pill.primary {
+    padding: 0 12px;
+    font-size: 0.82rem;
+  }
+
+  .editor-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .favorite-button {
+    width: 100%;
   }
 }
