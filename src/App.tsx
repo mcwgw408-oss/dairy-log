@@ -2,7 +2,8 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   BookOpen,
   CalendarDays,
-  Edit3,
+  CheckCircle2,
+  Clock3,
   Heart,
   Plus,
   Save,
@@ -46,6 +47,12 @@ const starterEntry = (): DiaryEntry => ({
   updatedAt: new Date().toISOString(),
 });
 
+const formatSavedTime = (value: string) =>
+  new Intl.DateTimeFormat("ja-JP", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+
 function App() {
   const [entries, setEntries] = useState<DiaryEntry[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -60,9 +67,13 @@ function App() {
   });
   const [activeId, setActiveId] = useState(entries[0]?.id ?? "");
   const [query, setQuery] = useState("");
+  const [saveMessage, setSaveMessage] = useState("保存済み");
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    setSaveMessage("保存しました");
+    const timer = window.setTimeout(() => setSaveMessage("自動保存中"), 1400);
+    return () => window.clearTimeout(timer);
   }, [entries]);
 
   const activeEntry = entries.find((entry) => entry.id === activeId) ?? entries[0];
@@ -118,6 +129,7 @@ function App() {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     updateEntry({});
+    setSaveMessage("保存しました");
   };
 
   const wordCount = activeEntry.body.trim()
@@ -136,6 +148,14 @@ function App() {
             <Plus size={22} />
           </button>
         </header>
+
+        <div className="save-status" aria-live="polite">
+          <CheckCircle2 size={20} />
+          <div>
+            <strong>{saveMessage}</strong>
+            <span>入力するとすぐ端末内に保存されます</span>
+          </div>
+        </div>
 
         <div className="quick-stats" aria-label="日記の概要">
           <div>
@@ -227,10 +247,15 @@ function App() {
               />
             </label>
 
+            <div className="save-summary">
+              <Clock3 size={17} />
+              <span>最終保存 {formatSavedTime(activeEntry.updatedAt)} / {wordCount} words</span>
+            </div>
+
             <div className="actions">
-              <button className="text-button" type="submit">
-                <Save size={18} />
-                保存
+              <button className="text-button save-button" type="submit">
+                <Save size={19} />
+                今すぐ保存
               </button>
               <button className="text-button ghost" type="button" onClick={deleteEntry}>
                 <Trash2 size={18} />
@@ -239,11 +264,6 @@ function App() {
             </div>
           </div>
         </form>
-
-        <footer className="bottom-note">
-          <Edit3 size={17} />
-          <span>{wordCount} words / 自動保存中</span>
-        </footer>
       </section>
     </main>
   );

@@ -112,6 +112,38 @@ h1 {
   gap: 8px;
 }
 
+.save-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 62px;
+  padding: 12px 14px;
+  border: 1px solid rgba(63, 111, 104, 0.22);
+  border-radius: 8px;
+  color: #173d38;
+  background: #dcebe6;
+}
+
+.save-status svg {
+  flex: 0 0 auto;
+}
+
+.save-status div {
+  display: grid;
+  gap: 2px;
+}
+
+.save-status strong {
+  font-size: 0.98rem;
+}
+
+.save-status span {
+  color: #3d5d58;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .quick-stats div {
   min-height: 58px;
   display: grid;
@@ -303,6 +335,17 @@ textarea {
   gap: 10px;
 }
 
+.save-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 30px;
+  color: #62594d;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
 .text-button {
   min-height: 46px;
   display: inline-flex;
@@ -317,19 +360,16 @@ textarea {
   font-weight: 800;
 }
 
+.text-button.save-button {
+  min-height: 54px;
+  font-size: 1rem;
+  box-shadow: 0 10px 24px rgba(63, 111, 104, 0.2);
+}
+
 .text-button.ghost {
   flex: 0 0 104px;
   color: #6a3834;
   background: #f3ddd8;
-}
-
-.bottom-note {
-  justify-content: center;
-  gap: 8px;
-  min-height: 28px;
-  color: #746858;
-  font-size: 0.82rem;
-  font-weight: 700;
 }
 
 @media (max-width: 380px) {
