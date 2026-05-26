@@ -1,0 +1,252 @@
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  BookOpen,
+  CalendarDays,
+  Edit3,
+  Heart,
+  Plus,
+  Save,
+  Search,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
+
+type Mood = "good" | "calm" | "tired" | "hard";
+
+type DiaryEntry = {
+  id: string;
+  date: string;
+  title: string;
+  body: string;
+  mood: Mood;
+  favorite: boolean;
+  updatedAt: string;
+};
+
+const STORAGE_KEY = "daily-diary.entries.v1";
+
+const moodLabels: Record<Mood, string> = {
+  good: "よかった",
+  calm: "おだやか",
+  tired: "つかれた",
+  hard: "たいへん",
+};
+
+const moodOptions: Mood[] = ["good", "calm", "tired", "hard"];
+
+const todayKey = () => new Date().toISOString().slice(0, 10);
+
+const starterEntry = (): DiaryEntry => ({
+  id: crypto.randomUUID(),
+  date: todayKey(),
+  title: "今日のこと",
+  body: "",
+  mood: "calm",
+  favorite: false,
+  updatedAt: new Date().toISOString(),
+});
+
+function App() {
+  const [entries, setEntries] = useState<DiaryEntry[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return [starterEntry()];
+
+    try {
+      const parsed = JSON.parse(saved) as DiaryEntry[];
+      return parsed.length ? parsed : [starterEntry()];
+    } catch {
+      return [starterEntry()];
+    }
+  });
+  const [activeId, setActiveId] = useState(entries[0]?.id ?? "");
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  }, [entries]);
+
+  const activeEntry = entries.find((entry) => entry.id === activeId) ?? entries[0];
+
+  const sortedEntries = useMemo(
+    () =>
+      [...entries].sort((a, b) => {
+        if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
+        return b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt);
+      }),
+    [entries],
+  );
+
+  const filteredEntries = useMemo(() => {
+    const keyword = query.trim().toLowerCase();
+    if (!keyword) return sortedEntries;
+
+    return sortedEntries.filter((entry) =>
+      [entry.title, entry.body, entry.date, moodLabels[entry.mood]]
+        .join(" ")
+        .toLowerCase()
+        .includes(keyword),
+    );
+  }, [query, sortedEntries]);
+
+  const updateEntry = (next: Partial<DiaryEntry>) => {
+    setEntries((current) =>
+      current.map((entry) =>
+        entry.id === activeEntry.id
+          ? { ...entry, ...next, updatedAt: new Date().toISOString() }
+          : entry,
+      ),
+    );
+  };
+
+  const addEntry = () => {
+    const next = starterEntry();
+    setEntries((current) => [next, ...current]);
+    setActiveId(next.id);
+  };
+
+  const deleteEntry = () => {
+    if (entries.length === 1) {
+      updateEntry({ title: "今日のこと", body: "", mood: "calm", favorite: false });
+      return;
+    }
+
+    const nextEntries = entries.filter((entry) => entry.id !== activeEntry.id);
+    setEntries(nextEntries);
+    setActiveId(nextEntries[0].id);
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    updateEntry({});
+  };
+
+  const wordCount = activeEntry.body.trim()
+    ? activeEntry.body.trim().split(/\s+/).length
+    : 0;
+
+  return (
+    <main className="app-shell">
+      <section className="phone-frame">
+        <header className="top-bar">
+          <div>
+            <p className="eyebrow">Daily Diary</p>
+            <h1>きょうを残す</h1>
+          </div>
+          <button className="icon-button primary" type="button" onClick={addEntry} aria-label="新しい日記">
+            <Plus size={22} />
+          </button>
+        </header>
+
+        <div className="quick-stats" aria-label="日記の概要">
+          <div>
+            <BookOpen size={18} />
+            <span>{entries.length}件</span>
+          </div>
+          <div>
+            <Sparkles size={18} />
+            <span>{entries.filter((entry) => entry.favorite).length}お気に入り</span>
+          </div>
+          <div>
+            <CalendarDays size={18} />
+            <span>{todayKey()}</span>
+          </div>
+        </div>
+
+        <label className="search-box">
+          <Search size={18} />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="日付・気分・本文で検索"
+          />
+        </label>
+
+        <div className="entry-strip" aria-label="日記一覧">
+          {filteredEntries.map((entry) => (
+            <button
+              className={`entry-chip ${entry.id === activeEntry.id ? "active" : ""}`}
+              key={entry.id}
+              type="button"
+              onClick={() => setActiveId(entry.id)}
+            >
+              <span>{entry.date.slice(5).replace("-", "/")}</span>
+              <strong>{entry.title || "無題の日記"}</strong>
+            </button>
+          ))}
+        </div>
+
+        <form className="editor" onSubmit={handleSubmit}>
+          <div className="editor-card">
+            <div className="editor-head">
+              <label>
+                <span>日付</span>
+                <input
+                  type="date"
+                  value={activeEntry.date}
+                  onChange={(event) => updateEntry({ date: event.target.value })}
+                />
+              </label>
+              <button
+                className={`icon-button ${activeEntry.favorite ? "liked" : ""}`}
+                type="button"
+                onClick={() => updateEntry({ favorite: !activeEntry.favorite })}
+                aria-label="お気に入り"
+              >
+                <Heart size={21} />
+              </button>
+            </div>
+
+            <label className="title-field">
+              <span>タイトル</span>
+              <input
+                value={activeEntry.title}
+                onChange={(event) => updateEntry({ title: event.target.value })}
+                placeholder="今日のタイトル"
+              />
+            </label>
+
+            <div className="mood-picker" aria-label="気分">
+              {moodOptions.map((mood) => (
+                <button
+                  className={activeEntry.mood === mood ? "selected" : ""}
+                  key={mood}
+                  type="button"
+                  onClick={() => updateEntry({ mood })}
+                >
+                  {moodLabels[mood]}
+                </button>
+              ))}
+            </div>
+
+            <label className="body-field">
+              <span>本文</span>
+              <textarea
+                value={activeEntry.body}
+                onChange={(event) => updateEntry({ body: event.target.value })}
+                placeholder="短くても、まとまっていなくても大丈夫。今日のことをここに。"
+              />
+            </label>
+
+            <div className="actions">
+              <button className="text-button" type="submit">
+                <Save size={18} />
+                保存
+              </button>
+              <button className="text-button ghost" type="button" onClick={deleteEntry}>
+                <Trash2 size={18} />
+                削除
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <footer className="bottom-note">
+          <Edit3 size={17} />
+          <span>{wordCount} words / 自動保存中</span>
+        </footer>
+      </section>
+    </main>
+  );
+}
+
+export default App;
