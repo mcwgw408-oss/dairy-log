@@ -1,7 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   BookOpen,
-  CalendarDays,
   CheckCircle2,
   Clock3,
   Heart,
@@ -15,6 +14,7 @@ import {
 
 type Mood = "good" | "calm" | "tired" | "hard";
 type SaveState = "saved" | "saving" | "error";
+type FilterMode = "all" | "favorite" | "today";
 
 type DiaryEntry = {
   id: string;
@@ -69,6 +69,7 @@ function App() {
   });
   const [activeId, setActiveId] = useState(entries[0]?.id ?? "");
   const [query, setQuery] = useState("");
+  const [filterMode, setFilterMode] = useState<FilterMode>("all");
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [saveMessage, setSaveMessage] = useState("保存済み");
 
@@ -101,16 +102,21 @@ function App() {
   );
 
   const filteredEntries = useMemo(() => {
+    const scopedEntries = sortedEntries.filter((entry) => {
+      if (filterMode === "favorite") return entry.favorite;
+      if (filterMode === "today") return entry.date === todayKey();
+      return true;
+    });
     const keyword = query.trim().toLowerCase();
-    if (!keyword) return sortedEntries;
+    if (!keyword) return scopedEntries;
 
-    return sortedEntries.filter((entry) =>
+    return scopedEntries.filter((entry) =>
       [entry.title, entry.body, entry.date, moodLabels[entry.mood]]
         .join(" ")
         .toLowerCase()
         .includes(keyword),
     );
-  }, [query, sortedEntries]);
+  }, [filterMode, query, sortedEntries]);
 
   const updateEntry = (next: Partial<DiaryEntry>) => {
     setEntries((current) =>
@@ -175,20 +181,40 @@ function App() {
           </div>
         </div>
 
-        <div className="quick-stats" aria-label="日記の概要">
-          <div>
-            <BookOpen size={18} />
-            <span>{entries.length}件</span>
+        <section className="finder-panel" aria-label="保存した日記を探す">
+          <div className="finder-head">
+            <strong>保存した日記を探す</strong>
+            <span>{filteredEntries.length}件表示</span>
           </div>
-          <div>
-            <Sparkles size={18} />
-            <span>{entries.filter((entry) => entry.favorite).length}お気に入り</span>
+          <div className="filter-tabs">
+            <button
+              className={filterMode === "all" ? "selected" : ""}
+              type="button"
+              onClick={() => setFilterMode("all")}
+            >
+              <BookOpen size={17} />
+              すべて
+              <span>{entries.length}</span>
+            </button>
+            <button
+              className={filterMode === "favorite" ? "selected" : ""}
+              type="button"
+              onClick={() => setFilterMode("favorite")}
+            >
+              <Sparkles size={17} />
+              お気に入り
+              <span>{entries.filter((entry) => entry.favorite).length}</span>
+            </button>
+            <button
+              className={filterMode === "today" ? "selected" : ""}
+              type="button"
+              onClick={() => setFilterMode("today")}
+            >
+              今日
+              <span>{entries.filter((entry) => entry.date === todayKey()).length}</span>
+            </button>
           </div>
-          <div>
-            <CalendarDays size={18} />
-            <span>{todayKey()}</span>
-          </div>
-        </div>
+        </section>
 
         <label className="search-box">
           <Search size={18} />
@@ -200,17 +226,21 @@ function App() {
         </label>
 
         <div className="entry-strip" aria-label="日記一覧">
-          {filteredEntries.map((entry) => (
-            <button
-              className={`entry-chip ${entry.id === activeEntry.id ? "active" : ""}`}
-              key={entry.id}
-              type="button"
-              onClick={() => setActiveId(entry.id)}
-            >
-              <span>{entry.date.slice(5).replace("-", "/")}</span>
-              <strong>{entry.title || "無題の日記"}</strong>
-            </button>
-          ))}
+          {filteredEntries.length ? (
+            filteredEntries.map((entry) => (
+              <button
+                className={`entry-chip ${entry.id === activeEntry.id ? "active" : ""}`}
+                key={entry.id}
+                type="button"
+                onClick={() => setActiveId(entry.id)}
+              >
+                <span>{entry.date.slice(5).replace("-", "/")}</span>
+                <strong>{entry.title || "無題の日記"}</strong>
+              </button>
+            ))
+          ) : (
+            <p className="empty-result">見つかりませんでした</p>
+          )}
         </div>
 
         <form className="editor" onSubmit={handleSubmit}>
